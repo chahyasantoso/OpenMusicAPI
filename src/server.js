@@ -30,7 +30,7 @@ const init = async () => {
   server.ext('onPreResponse', (request, h) => {
     const { response } = request; // mendapatkan konteks response dari request
 
-    // intercept error hanya jika dia client error dan server error
+    // intercept hanya jika response adalah client error dan server error
     if (response instanceof Error) {
       // client error
       if (response instanceof ClientError) {
@@ -44,6 +44,8 @@ const init = async () => {
 
       // server error, code >= 500
       if (response.isServer) {
+        console.error(response); // log to console buat developer
+
         const newResponse = h.response({
           status: 'error',
           message: 'server error',

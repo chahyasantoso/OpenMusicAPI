@@ -2,13 +2,14 @@ const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
-// const { mapDBToModel } = require('../../utils');
+const { mapDBToSongModel } = require('../../utils');
 
 class OpenMusicService {
   constructor() {
     this._pool = new Pool();
   }
 
+  // album services ------------------------------------------
   async addAlbum({ name, year }) {
     const id = nanoid(16);
 
@@ -65,7 +66,7 @@ class OpenMusicService {
     }
   }
 
-  // song functions ------------------------------------------
+  // song services ------------------------------------------
   async addSong({
     title, year, genre, performer, duration, albumId,
   }) {
@@ -85,13 +86,14 @@ class OpenMusicService {
     return result.rows[0].id;
   }
 
+  // get all songs ,difilter berdasarkan filter
   async getSongs(filter) {
     const query = {
       text: 'SELECT * FROM song',
       values: [],
     };
 
-    // bisa terjadi undefined filter, delete semua undefined filter.
+    // delete semua undefined filter.
     const validFilter = filter;
     Object.keys(validFilter).forEach((key) => (typeof validFilter[key] === 'undefined') && delete validFilter[key]);
 
@@ -103,8 +105,7 @@ class OpenMusicService {
     }
 
     const result = await this._pool.query(query);
-
-    return result.rows; // perlu mapping?
+    return result.rows.map(mapDBToSongModel); // mapping dari DB model to Object model
   }
 
   async getSongById(id) {
@@ -117,8 +118,7 @@ class OpenMusicService {
     if (!result.rows.length) {
       throw new NotFoundError('Song tidak ditemukan');
     }
-
-    return result.rows[0]; // perlu mapping?
+    return result.rows.map(mapDBToSongModel)[0]; // mapping dari DB model to Object model
   }
 
   async editSongById(id, {

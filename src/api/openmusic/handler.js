@@ -29,19 +29,19 @@ class OpenMusicHandler {
     const album = await this._service.getAlbumById(albumId);
     // ambil songs, filter berdasarkan album id
     const songs = await this._service.getSongs({ album_id: albumId });
+    album.songs = songs.map(({ id, title, performer }) => ({ id, title, performer }));
 
     const response = h.response({
       status: 'success',
       data: {
         album,
-        songs: songs.map(({ id, title, performer }) => ({ id, title, performer })),
       },
     });
     return response;
   }
 
   async putAlbumByIdHandler(request, h) {
-    this._validator.validateNotePayload(request.payload);
+    this._validator.validateAlbumPayload(request.payload);
 
     const { id: albumId } = request.params;
     await this._service.editAlbumById(albumId, request.payload);
@@ -65,7 +65,7 @@ class OpenMusicHandler {
   }
 
   async postSongHandler(request, h) {
-    this._validator.validateNotePayload(request.payload);
+    this._validator.validateSongPayload(request.payload);
 
     const songId = await this._service.addSong(request.payload);
 
@@ -109,7 +109,7 @@ class OpenMusicHandler {
   }
 
   async putSongByIdHandler(request, h) {
-    this._validator.validateNotePayload(request.payload);
+    this._validator.validateSongPayload(request.payload);
 
     const { id } = request.params;
     await this._service.editSongById(id, request.payload);
@@ -127,9 +127,7 @@ class OpenMusicHandler {
     await this._service.deleteSongById(id);
     const response = h.response({
       status: 'success',
-      data: {
-        message: 'Delete song berhasil',
-      },
+      message: 'Delete song berhasil',
     });
     return response;
   }

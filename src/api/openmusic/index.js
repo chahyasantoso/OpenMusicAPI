@@ -5,7 +5,7 @@ module.exports = {
   name: 'notes',
   version: '1.0.0',
   register: async (server, { service, validator }) => {
-    const musicHandler = new OpenMusicHandler(service, validator);
-    server.route(routes(musicHandler));
+    const handler = new OpenMusicHandler(service, validator);
+    server.route(routes(handler));
   },
 };
