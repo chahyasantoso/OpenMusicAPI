@@ -1,72 +1,14 @@
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
-const InvariantError = require('../../exceptions/InvariantError');
-const NotFoundError = require('../../exceptions/NotFoundError');
-const { mapDBToSongModel } = require('../../utils');
+const InvariantError = require('../../../exceptions/InvariantError');
+const NotFoundError = require('../../../exceptions/NotFoundError');
+const { mapDBToSongModel } = require('../../../utils');
 
-class OpenMusicService {
+class SongService {
   constructor() {
     this._pool = new Pool();
   }
 
-  // album services ------------------------------------------
-  async addAlbum({ name, year }) {
-    const id = nanoid(16);
-
-    const query = {
-      text: 'INSERT INTO album VALUES($1, $2, $3) RETURNING id',
-      values: [id, name, year],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (!result.rows[0].id) {
-      throw new InvariantError('Insert album gagal');
-    }
-
-    return result.rows[0].id;
-  }
-
-  async getAlbumById(id) {
-    const query = {
-      text: 'SELECT * FROM album WHERE id = $1',
-      values: [id],
-    };
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new NotFoundError('Album tidak ditemukan');
-    }
-
-    return result.rows[0];
-  }
-
-  async editAlbumById(id, { name, year }) {
-    const query = {
-      text: 'UPDATE album SET name = $1, year = $2 WHERE id = $3 RETURNING id',
-      values: [name, year, id],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new NotFoundError('Edit album gagal. Id tidak ditemukan');
-    }
-  }
-
-  async deleteAlbumById(id) {
-    const query = {
-      text: 'DELETE FROM album WHERE id = $1 RETURNING id',
-      values: [id],
-    };
-
-    const result = await this._pool.query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Delete album gagal. Id tidak ditemukan');
-    }
-  }
-
-  // song services ------------------------------------------
   async addSong({
     title, year, genre, performer, duration, albumId,
   }) {
@@ -86,18 +28,15 @@ class OpenMusicService {
     return result.rows[0].id;
   }
 
-  // get all songs ,difilter berdasarkan filter
   async getSongs(filter) {
     const query = {
       text: 'SELECT * FROM song',
       values: [],
     };
 
-    // delete semua undefined filter.
     const validFilter = filter;
     Object.keys(validFilter).forEach((key) => (typeof validFilter[key] === 'undefined') && delete validFilter[key]);
 
-    // construct the filter, pakai ILIKE (case insensitive) dan % (wildcard)
     const column = Object.keys(validFilter).map((key, index) => `${key} ILIKE $${index + 1}`);
     if (column.length > 0) {
       query.text += ` WHERE ${column.join(' AND ')}`;
@@ -105,7 +44,7 @@ class OpenMusicService {
     }
 
     const result = await this._pool.query(query);
-    return result.rows.map(mapDBToSongModel); // mapping dari DB model to Object model
+    return result.rows.map(mapDBToSongModel);
   }
 
   async getSongById(id) {
@@ -115,10 +54,10 @@ class OpenMusicService {
     };
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Song tidak ditemukan');
     }
-    return result.rows.map(mapDBToSongModel)[0]; // mapping dari DB model to Object model
+    return mapDBToSongModel(result.rows[0]);
   }
 
   async editSongById(id, {
@@ -130,7 +69,7 @@ class OpenMusicService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Edit song gagal. Id tidak ditemukan');
     }
   }
@@ -142,10 +81,10 @@ class OpenMusicService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Delete song gagal. Id tidak ditemukan');
     }
   }
 }
 
-module.exports = OpenMusicService;
+module.exports = SongService;

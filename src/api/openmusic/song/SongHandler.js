@@ -1,67 +1,11 @@
 const autoBind = require('auto-bind');
 
-class OpenMusicHandler {
+class SongHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
-    // autobind semua method
+
     autoBind(this);
-  }
-
-  async postAlbumHandler(request, h) {
-    this._validator.validateAlbumPayload(request.payload);
-
-    const { name, year } = request.payload;
-    const albumId = await this._service.addAlbum({ name, year });
-
-    const response = h.response({
-      status: 'success',
-      data: {
-        albumId,
-      },
-    });
-    response.code(201);
-    return response;
-  }
-
-  async getAlbumByIdHandler(request, h) {
-    const { id: albumId } = request.params;
-    const album = await this._service.getAlbumById(albumId);
-    // ambil songs, filter berdasarkan album id
-    const songs = await this._service.getSongs({ album_id: albumId });
-    album.songs = songs.map(({ id, title, performer }) => ({ id, title, performer }));
-
-    const response = h.response({
-      status: 'success',
-      data: {
-        album,
-      },
-    });
-    return response;
-  }
-
-  async putAlbumByIdHandler(request, h) {
-    this._validator.validateAlbumPayload(request.payload);
-
-    const { id: albumId } = request.params;
-    await this._service.editAlbumById(albumId, request.payload);
-
-    const response = h.response({
-      status: 'success',
-      message: 'Edit album berhasil',
-    });
-    return response;
-  }
-
-  async deleteAlbumByIdHandler(request, h) {
-    const { id: albumId } = request.params;
-    await this._service.deleteAlbumById(albumId);
-
-    const response = h.response({
-      status: 'success',
-      message: 'Delete album berhasil',
-    });
-    return response;
   }
 
   async postSongHandler(request, h) {
@@ -82,7 +26,6 @@ class OpenMusicHandler {
   async getSongsHandler(request, h) {
     this._validator.validateSongQuery(request.query);
 
-    // ambil semua songs, filter songs berdasarkan title dan performer
     const { title: titleFilter, performer: performerFilter } = request.query;
     const songs = await this._service.getSongs({ title: titleFilter, performer: performerFilter });
 
@@ -133,4 +76,4 @@ class OpenMusicHandler {
   }
 }
 
-module.exports = OpenMusicHandler;
+module.exports = SongHandler;
