@@ -1,11 +1,16 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
-const openMusic = require('./api/openmusic');
-const AlbumService = require('./services/postgres/album/AlbumService');
-const SongService = require('./services/postgres/song/SongService');
-const albumValidator = require('./validator/openmusic/album');
-const songValidator = require('./validator/openmusic/song');
+
+const album = require('./api/album');
+const song = require('./api/song');
+
+const AlbumService = require('./services/postgres/AlbumService');
+const SongService = require('./services/postgres/SongService');
+
+const albumValidator = require('./validator/album');
+const songValidator = require('./validator/song');
+
 const ClientError = require('./exceptions/ClientError');
 
 const init = async () => {
@@ -21,13 +26,22 @@ const init = async () => {
 
   const albumService = new AlbumService();
   const songService = new SongService();
-  await server.register({
-    plugin: openMusic,
-    options: {
-      service: { albumService, songService },
-      validator: { albumValidator, songValidator },
+  await server.register([
+    {
+      plugin: album,
+      options: {
+        service: { albumService, songService },
+        validator: albumValidator,
+      },
     },
-  });
+    {
+      plugin: song,
+      options: {
+        service: songService,
+        validator: songValidator,
+      },
+    },
+  ]);
 
   // onPreResponse error handling
   server.ext('onPreResponse', (request, h) => {
